@@ -1,452 +1,157 @@
-"""DRISHTI Project Safety & Architecture PDF Report Generator.
-
-Generates a comprehensive, executive-ready PDF report covering:
-1. Executive Summary & Heavy Vehicle Blind Spot Problem.
-2. Current Prototype Features & Capabilities (Software-Only Prototype).
-3. System Architecture & Detection Pipeline.
-4. Embedded Visual Proof & Screenshots.
-5. The Next Step: Phase 2 Hardware Integration Roadmap (ESP32/Arduino mirror LEDs,
-   CAN-bus, haptic vibration, radar-camera fusion).
-Written in simple, clear, and accessible language.
-"""
-from __future__ import annotations
-
-import os
-from datetime import datetime
+"""Create the current DRISHTI project overview PDF."""
 from pathlib import Path
+import cv2
 
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.pdfgen import canvas
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
 from reportlab.platypus import (
-    HRFlowable,
-    Image,
-    KeepTogether,
-    PageBreak,
-    Paragraph,
-    SimpleDocTemplate,
-    Spacer,
-    Table,
-    TableStyle,
+    SimpleDocTemplate, Paragraph, Spacer, Image, PageBreak, Table, TableStyle,
+    KeepTogether, HRFlowable,
 )
 
-BASE_DIR = Path(__file__).resolve().parent
-ASSETS_DIR = BASE_DIR / "assets"
-OUTPUT_PDF = BASE_DIR / "DRISHTI_Blind_Spot_System_Report.pdf"
+BASE = Path(__file__).resolve().parent
+ASSETS = BASE / "assets"
+OUT_DIR = BASE / "output" / "pdf"
+TMP = BASE / "tmp" / "pdfs"
+OUT = OUT_DIR / "DRISHTI_Project_Overview.pdf"
+LANDING = "https://spidyxrud-dot.github.io/drishti-blind-spot-warning-system/"
+REPO = "https://github.com/spidyxrud-dot/drishti-blind-spot-warning-system"
+VIDEO_SOURCE = "https://commons.wikimedia.org/wiki/File:Garbsen_2019.webm"
+LICENSE = "https://creativecommons.org/licenses/by-sa/4.0/"
 
+NAVY = colors.HexColor("#102139")
+INK = colors.HexColor("#17263A")
+MUTED = colors.HexColor("#5E6B79")
+ORANGE = colors.HexColor("#F3A20B")
+CREAM = colors.HexColor("#F7F2E8")
+PALE = colors.HexColor("#EEF2F5")
+GREEN = colors.HexColor("#14805E")
+RED = colors.HexColor("#B63B32")
 
-class NumberedCanvas(canvas.Canvas):
-    """Adds professional running header and page numbering."""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._saved_page_states = []
+styles = getSampleStyleSheet()
+styles.add(ParagraphStyle(name="CoverTitle", parent=styles["Title"], fontName="Helvetica-Bold", fontSize=29, leading=33, textColor=NAVY, alignment=TA_LEFT, spaceAfter=7))
+styles.add(ParagraphStyle(name="Sub", parent=styles["Normal"], fontSize=12, leading=18, textColor=MUTED, spaceAfter=7))
+styles.add(ParagraphStyle(name="H1x", parent=styles["Heading1"], fontName="Helvetica-Bold", fontSize=21, leading=25, textColor=NAVY, spaceBefore=3, spaceAfter=10))
+styles.add(ParagraphStyle(name="H2x", parent=styles["Heading2"], fontName="Helvetica-Bold", fontSize=12, leading=15, textColor=NAVY, spaceBefore=8, spaceAfter=4))
+styles.add(ParagraphStyle(name="Bodyx", parent=styles["BodyText"], fontSize=9.3, leading=14, textColor=INK, spaceAfter=6))
+styles.add(ParagraphStyle(name="Smallx", parent=styles["BodyText"], fontSize=7.6, leading=10.5, textColor=MUTED, spaceAfter=3))
+styles.add(ParagraphStyle(name="Kicker", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=8, leading=11, textColor=ORANGE, spaceAfter=6))
+styles.add(ParagraphStyle(name="Cell", parent=styles["BodyText"], fontSize=8.1, leading=11, textColor=INK))
+styles.add(ParagraphStyle(name="CellHead", parent=styles["BodyText"], fontName="Helvetica-Bold", fontSize=8.2, leading=11, textColor=colors.white))
+styles.add(ParagraphStyle(name="Link", parent=styles["BodyText"], fontSize=9, leading=14, textColor=NAVY))
 
-    def showPage(self):
-        self._saved_page_states.append(dict(self.__dict__))
-        self._startPage()
+def P(text, style="Bodyx"):
+    return Paragraph(text, styles[style])
 
-    def save(self):
-        num_pages = len(self._saved_page_states)
-        for state in self._saved_page_states:
-            self.__dict__.update(state)
-            self.draw_page_decorations(num_pages)
-            super().showPage()
-        super().save()
+def on_page(canvas, doc):
+    canvas.saveState()
+    w, h = A4
+    canvas.setFillColor(NAVY)
+    canvas.rect(0, h-9*mm, w, 9*mm, fill=1, stroke=0)
+    canvas.setFillColor(ORANGE)
+    canvas.rect(0, h-9*mm, 3*mm, 9*mm, fill=1, stroke=0)
+    canvas.setFont("Helvetica-Bold", 8)
+    canvas.setFillColor(colors.white)
+    canvas.drawString(16*mm, h-6*mm, "DRISHTI  /  PROJECT OVERVIEW")
+    canvas.setStrokeColor(colors.HexColor("#D8DEE5"))
+    canvas.line(16*mm, 15*mm, w-16*mm, 15*mm)
+    canvas.setFont("Helvetica", 7.5)
+    canvas.setFillColor(MUTED)
+    canvas.drawString(16*mm, 10*mm, "Rudra Rahul Rajgure  ·  Educational software prototype")
+    canvas.drawRightString(w-16*mm, 10*mm, f"{doc.page}")
+    canvas.restoreState()
 
-    def draw_page_decorations(self, page_count: int):
-        self.saveState()
-        self.setFont("Helvetica", 8)
-        self.setFillColor(colors.HexColor("#64748b"))
+def extract_frame():
+    TMP.mkdir(parents=True, exist_ok=True)
+    path = TMP / "road_demo_frame.jpg"
+    cap = cv2.VideoCapture(str(ASSETS / "demo_road.webm"))
+    if not cap.isOpened():
+        raise RuntimeError("Could not open bundled demo video")
+    cap.set(cv2.CAP_PROP_POS_MSEC, 7000)
+    ok, frame = cap.read()
+    cap.release()
+    if not ok:
+        raise RuntimeError("Could not extract a frame from bundled demo video")
+    h, w = frame.shape[:2]
+    # Draw restrained example zones so the image communicates the project, not calibration.
+    overlay = frame.copy()
+    cv2.fillPoly(overlay, [__import__("numpy").array([[0,int(h*.28)],[int(w*.22),int(h*.23)],[int(w*.29),h],[0,h]])], (20,105,225))
+    cv2.fillPoly(overlay, [__import__("numpy").array([[int(w*.78),int(h*.22)],[w,int(h*.28)],[w,h],[int(w*.72),h]])], (20,105,225))
+    frame = cv2.addWeighted(overlay, .20, frame, .80, 0)
+    cv2.imwrite(str(path), frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
+    return path
 
-        # Don't draw header on cover page (page 1)
-        if self._pageNumber > 1:
-            self.drawString(54, letter[1] - 36, "DRISHTI · Intelligent Blind-Spot Warning System · Prototype Report")
-            self.setStrokeColor(colors.HexColor("#cbd5e1"))
-            self.setLineWidth(0.5)
-            self.line(54, letter[1] - 42, letter[0] - 54, letter[1] - 42)
+def card(text, bg=PALE, width=85*mm):
+    t = Table([[P(text, "Cell")]], colWidths=[width])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0,0),(-1,-1),bg), ("BOX",(0,0),(-1,-1),.7,colors.HexColor("#D6DEE7")),
+        ("LEFTPADDING",(0,0),(-1,-1),9), ("RIGHTPADDING",(0,0),(-1,-1),9),
+        ("TOPPADDING",(0,0),(-1,-1),8), ("BOTTOMPADDING",(0,0),(-1,-1),8),
+        ("VALIGN",(0,0),(-1,-1),"TOP"),
+    ]))
+    return t
 
-        # Footer on all pages
-        footer_text = f"Page {self._pageNumber} of {page_count}"
-        self.drawRightString(letter[0] - 54, 32, footer_text)
-        self.drawString(54, 32, "Confidential & Proprietary · Safer Roads, Stronger India")
-        self.setStrokeColor(colors.HexColor("#cbd5e1"))
-        self.setLineWidth(0.5)
-        self.line(54, 44, letter[0] - 54, 44)
-        self.restoreState()
-
-
-def build_pdf_report(output_path: Path | str = OUTPUT_PDF) -> str:
-    output_path = Path(output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    doc = SimpleDocTemplate(
-        str(output_path),
-        pagesize=letter,
-        leftMargin=54,
-        rightMargin=54,
-        topMargin=54,
-        bottomMargin=54,
-    )
-
-    styles = getSampleStyleSheet()
-
-    # Custom Color Palette
-    PRIMARY = colors.HexColor("#0f2942")     # Deep navy
-    SECONDARY = colors.HexColor("#f59e0b")   # Saffron / Amber
-    TEXT_DARK = colors.HexColor("#1e293b")   # Slate 800
-    TEXT_MUTED = colors.HexColor("#475569")  # Slate 600
-    BG_CARD = colors.HexColor("#f8fafc")     # Light slate
-    BORDER_COL = colors.HexColor("#e2e8f0")
-    ALERT_RED = colors.HexColor("#dc2626")
-    SAFE_GREEN = colors.HexColor("#16a34a")
-
-    # Typography Styles
-    title_style = ParagraphStyle(
-        "CoverTitle",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=26,
-        leading=32,
-        textColor=PRIMARY,
-        spaceAfter=8,
-    )
-
-    subtitle_style = ParagraphStyle(
-        "CoverSubtitle",
-        parent=styles["Normal"],
-        fontName="Helvetica-Bold",
-        fontSize=13,
-        leading=18,
-        textColor=SECONDARY,
-        spaceAfter=18,
-    )
-
-    h1_style = ParagraphStyle(
-        "Heading1_Custom",
-        parent=styles["Heading1"],
-        fontName="Helvetica-Bold",
-        fontSize=18,
-        leading=22,
-        textColor=PRIMARY,
-        spaceBefore=14,
-        spaceAfter=8,
-        keepWithNext=True,
-    )
-
-    h2_style = ParagraphStyle(
-        "Heading2_Custom",
-        parent=styles["Heading2"],
-        fontName="Helvetica-Bold",
-        fontSize=12,
-        leading=16,
-        textColor=PRIMARY,
-        spaceBefore=10,
-        spaceAfter=6,
-        keepWithNext=True,
-    )
-
-    body_style = ParagraphStyle(
-        "Body_Custom",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=10,
-        leading=15,
-        textColor=TEXT_DARK,
-        spaceAfter=8,
-    )
-
-    bullet_style = ParagraphStyle(
-        "Bullet_Custom",
-        parent=styles["Normal"],
-        fontName="Helvetica",
-        fontSize=9.5,
-        leading=14,
-        textColor=TEXT_DARK,
-        leftIndent=14,
-        spaceAfter=4,
-    )
-
-    callout_style = ParagraphStyle(
-        "Callout_Custom",
-        parent=styles["Normal"],
-        fontName="Helvetica-Oblique",
-        fontSize=9.5,
-        leading=14,
-        textColor=PRIMARY,
-    )
-
+def build():
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    frame = extract_frame()
+    doc = SimpleDocTemplate(str(OUT), pagesize=A4, rightMargin=17*mm, leftMargin=17*mm, topMargin=18*mm, bottomMargin=20*mm, title="DRISHTI Project Overview", author="Rudra Rahul Rajgure", subject="Software-only blind-spot warning prototype")
     story = []
+    story += [Spacer(1, 5*mm), P("COMPUTER VISION · HEAVY VEHICLE DEMONSTRATION", "Kicker"), P("DRISHTI", "CoverTitle"), P("Intelligent Blind-Spot Warning System for Heavy Vehicles", "Sub")]
+    banner = ASSETS / "india_banner.png"
+    if banner.exists():
+        img = Image(str(banner), width=178*mm, height=31*mm, kind="proportional")
+        story += [img, Spacer(1, 4*mm)]
+    else:
+        story += [Spacer(1, 8*mm)]
+    story.append(P("PROJECT OVERVIEW", "Kicker"))
+    story.append(P("A local desktop prototype that detects road users in camera or recorded video, tracks them across frames, and highlights configurable warning regions with visual, sound, and optional spoken alerts.", "Bodyx"))
+    story.append(Spacer(1, 2*mm))
+    img = Image(str(frame), width=177*mm, height=99.6*mm)
+    story.append(img)
+    story.append(P("Bundled real-road demonstration footage with illustrative overlays. The polygons are image-space examples and do not represent calibrated truck blind spots.", "Smallx"))
+    info = Table([[P("PREPARED BY", "Kicker"), P("PROJECT LINKS", "Kicker")],
+                  [P("<b>Rudra Rahul Rajgure</b><br/>Educational software prototype<br/>15 November 2026", "Bodyx"),
+                   P(f'<link href="{LANDING}"><u>Open the landing page</u></link><br/><link href="{REPO}"><u>View the GitHub repository</u></link>', "Link")]], colWidths=[72*mm, 105*mm])
+    info.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,-1),CREAM),("BOX",(0,0),(-1,-1),.8,colors.HexColor("#E7DCC8")),("VALIGN",(0,0),(-1,-1),"TOP"),("LEFTPADDING",(0,0),(-1,-1),9),("RIGHTPADDING",(0,0),(-1,-1),9),("TOPPADDING",(0,0),(-1,-1),7),("BOTTOMPADDING",(0,0),(-1,-1),6)]))
+    story += [Spacer(1, 4*mm), info, PageBreak()]
 
-    # =========================================================================
-    # COVER / HEADER BANNER
-    # =========================================================================
-    logo_path = ASSETS_DIR / "drishti_logo.png"
-    if logo_path.exists():
-        story.append(Image(str(logo_path), width=4.8 * inch, height=0.55 * inch))
-        story.append(Spacer(1, 14))
+    story += [P("01  /  WHAT THE PROJECT DOES", "Kicker"), P("A software-only road-scene system", "H1x"),
+        P("DRISHTI runs on a Windows computer and analyzes either a connected camera or a recorded clip. The dashboard shows detected objects, confidence, image-space zones, current alert state, recent events, and performance indicators.")]
+    flow = Table([[P("VIDEO INPUT", "CellHead"), P("DETECTION + TRACKING", "CellHead"), P("ZONE + RESPONSE", "CellHead")],
+                  [P("Webcam or video file<br/>MP4 · AVI · MOV · WebM", "Cell"), P("OpenCV + YOLOv8n<br/>ByteTrack IDs", "Cell"), P("Editable polygons<br/>Visual · tone · speech", "Cell")]], colWidths=[59*mm]*3)
+    flow.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,0),NAVY),("BACKGROUND",(0,1),(-1,-1),PALE),("GRID",(0,0),(-1,-1),.5,colors.white),("VALIGN",(0,0),(-1,-1),"TOP"),("LEFTPADDING",(0,0),(-1,-1),8),("RIGHTPADDING",(0,0),(-1,-1),8),("TOPPADDING",(0,0),(-1,-1),8),("BOTTOMPADDING",(0,0),(-1,-1),8)]))
+    story += [flow, Spacer(1, 4*mm), P("Road-user classes", "H2x"), P("The detector is configured for person, bicycle, motorcycle, car, bus, and truck. Bounding boxes show the class label and confidence score. Tracking associates detections over processed frames so entries can be recorded as distinct events rather than a new event on every frame."), P("Review and records", "H2x"), P("SQLite stores detection and alert history. The dashboard includes timeline/history views, incident snapshots, object summaries, charts, and CSV export. Speed indicators distinguish AI inference speed from displayed UI update speed; recorded-video frame skipping is used to limit playback lag."), P("Inputs and local processing", "H2x"), P("The video and model run locally. Computer speakers provide the warning tone, and optional Windows speech can announce the object and its left/right image-space side. Mute, volume, video controls, camera selection, and zone presets are provided in the desktop UI."), PageBreak()]
 
-    story.append(Paragraph("DRISHTI: Intelligent Blind-Spot Warning System", title_style))
-    story.append(Paragraph("Advanced Computer Vision & ADAS Safety Prototype for Heavy Commercial Vehicles", subtitle_style))
-    story.append(HRFlowable(width="100%", thickness=2, color=SECONDARY, spaceAfter=14))
+    story += [P("02  /  WARNING BEHAVIOR", "Kicker"), P("How the two stages work", "H1x"), P("The stage labels describe application logic for demonstration. Turn indicators and vehicle speed are simulated dashboard inputs; the software is not connected to truck signals or vehicle systems.")]
+    stages = Table([[P("STAGE 1  ·  ADVISORY", "CellHead"), P("STAGE 2  ·  SIMULATED PRIORITY", "CellHead")],
+                    [P("A tracked road user’s bounding-box centre enters an enabled image-space warning zone. The UI marks the object and records a new zone-entry event. The dashboard uses an advisory state when the matching indicator is off.", "Cell"), P("When the simulated left or right turn indicator matches an occupied zone, the dashboard raises the warning to a critical red state and may play the critical warning tone. This is a priority demonstration, not a vehicle-integrated collision alarm.", "Cell")]], colWidths=[88.5*mm,88.5*mm])
+    stages.setStyle(TableStyle([("BACKGROUND",(0,0),(0,0),ORANGE),("BACKGROUND",(1,0),(1,0),RED),("BACKGROUND",(0,1),(-1,-1),PALE),("GRID",(0,0),(-1,-1),1,colors.white),("VALIGN",(0,0),(-1,-1),"TOP"),("LEFTPADDING",(0,0),(-1,-1),9),("RIGHTPADDING",(0,0),(-1,-1),9),("TOPPADDING",(0,0),(-1,-1),8),("BOTTOMPADDING",(0,0),(-1,-1),8)]))
+    story += [stages, Spacer(1, 4*mm), P("What “blind spot” means here", "H2x"), P("A zone is a polygon drawn on the video image. Its location depends on the camera view, image framing, and current preset. It is not measured in metres and has not been calibrated to a truck model, camera pose, mirrors, or road geometry. An object inside this polygon is a demo-zone entry, not proof that the object is physically inside a real truck blind spot."), P("Current limitations", "H2x"), P("The included road clip is useful for demonstrating playback and overlays, but it is not a labeled evaluation set. Detection results can vary with lighting, distance, occlusion, camera motion, inference speed, and the selected confidence threshold. Dropping stale video frames reduces lag but can miss brief entries. No accuracy, safety certification, or real-vehicle performance claim is made."), P("This prototype is entirely software-based", "H2x"), P("No microcontroller, external sensor, physical LED, or physical buzzer is required. The next project stage should improve measured evidence and usability before any real-world safety use is considered."), PageBreak()]
 
-    meta_table_data = [
-        [
-            Paragraph("<b>Document Version:</b> 1.0 (Prototype Evaluation)", body_style),
-            Paragraph(f"<b>Date:</b> {datetime.now():%d %B %Y}", body_style),
-        ],
-        [
-            Paragraph("<b>System Core:</b> YOLOv8n + ByteTrack + Dual-Zone Vision", body_style),
-            Paragraph("<b>Target Domain:</b> Heavy Trucks, Buses, Commercial Fleets", body_style),
-        ],
+    story += [P("03  /  PROJECT STAGES", "Kicker"), P("Where it is now, and what comes next", "H1x"), P("Current stage · Desktop software prototype", "H2x"), P("The working application demonstrates local video input, YOLOv8n detection, ByteTrack object association, editable image-space polygons, simulated turn-indicator priority, computer audio and optional speech, event logging, snapshots, analytics, and history export. The landing page provides project information and a downloadable repository ZIP; it does not run the Python application in a browser."), P("Second stage · Validation and refinement", "H2x")]
+    second = [
+        [P("1. Collect and label", "CellHead"), P("Representative road videos covering road users, weather, lighting, camera angles, and occlusion; label a held-out set with clear class and zone-entry annotations.", "Cell")],
+        [P("2. Measure", "CellHead"), P("Report precision, recall, missed entries, false alerts, alert delay, and performance on target computers. Keep the test set separate from model tuning.", "Cell")],
+        [P("3. Review zones", "CellHead"), P("Test the image-space interaction and document camera placement assumptions. Only qualified vehicle-safety work can establish physical calibration.", "Cell")],
+        [P("4. Improve", "CellHead"), P("Use findings to tune tracking, frame handling, warning timing, speech, and operator controls. Repeat validation after changes and publish the limitations with results.", "Cell")],
     ]
-    meta_table = Table(meta_table_data, colWidths=[240, 260])
-    meta_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f1f5f9")),
-        ("PADDING", (0, 0), (-1, -1), 8),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("BOX", (0, 0), (-1, -1), 1, BORDER_COL),
-    ]))
-    story.append(meta_table)
-    story.append(Spacer(1, 14))
+    tab = Table(second, colWidths=[34*mm,143*mm])
+    tab.setStyle(TableStyle([("BACKGROUND",(0,0),(0,-1),NAVY),("BACKGROUND",(1,0),(1,-1),PALE),("GRID",(0,0),(-1,-1),.8,colors.white),("VALIGN",(0,0),(-1,-1),"TOP"),("LEFTPADDING",(0,0),(-1,-1),8),("RIGHTPADDING",(0,0),(-1,-1),8),("TOPPADDING",(0,0),(-1,-1),7),("BOTTOMPADDING",(0,0),(-1,-1),7)]))
+    story += [tab, Spacer(1, 3*mm), P("The project currently includes an evaluation command and a COCO128 smoke baseline. COCO128 is not held out for this project and cannot establish real-world reliability. A future validation report should publish the actual dataset, split, configuration, errors, and performance measurements rather than infer accuracy from a demo video."), PageBreak()]
 
-    # Executive Summary Card
-    summary_text = (
-        "<b>Executive Summary:</b><br/>"
-        "Large commercial vehicles such as freight trucks, tankers, and transit buses suffer from dangerous blind spots "
-        "along their left and right sides. Smaller vulnerable road users—especially two-wheelers, cyclists, and pedestrians—"
-        "frequently disappear from mirror sightlines. <b>DRISHTI</b> is an intelligent, software-powered safety system "
-        "that uses real-time computer vision to monitor vehicle blind zones, track surrounding traffic, correlate "
-        "turn signal indicators, and deliver immediate visual and audible warnings to prevent side-swipe and turn collisions."
-    )
-    card_table = Table([[Paragraph(summary_text, body_style)]], colWidths=[500])
-    card_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#e0f2fe")),
-        ("BOX", (0, 0), (-1, -1), 1.5, colors.HexColor("#0284c7")),
-        ("PADDING", (0, 0), (-1, -1), 10),
-    ]))
-    story.append(card_table)
-    story.append(Spacer(1, 16))
-
-    # =========================================================================
-    # SECTION 1: THE REAL-WORLD PROBLEM
-    # =========================================================================
-    story.append(Paragraph("1. The Heavy Vehicle Blind-Spot Crisis", h1_style))
-    p1 = (
-        "Every year, thousands of fatal accidents occur when heavy trucks make left or right turns across lanes occupied "
-        "by motorcycles or bicycles. The driver sits high in the cab, and traditional side mirrors have physical optical limits "
-        "creating significant invisible cones (often spanning 2 to 4 meters wide beside the trailer). "
-        "In developing urban road conditions, two-wheelers regularly weave past heavy vehicles precisely through these blind zones. "
-        "A reliable system must distinguish between normal traffic and imminent collision hazards without overwhelming the driver with false alarms."
-    )
-    story.append(Paragraph(p1, body_style))
-    story.append(Spacer(1, 10))
-
-    # Problem Matrix Table
-    prob_data = [
-        ["Blind Zone Region", "Hazard Level", "Real-World Vulnerability", "DRISHTI Solution"],
-        ["Right Side Flank", "Extreme", "Motorcyclists overtaking on the right or filtering at intersections", "Right Blind Zone polygonal tracking"],
-        ["Left Side / Mirror", "High", "Pedestrians and cyclists crossing near the front-left cab corner", "Left Blind Zone & mirror reference box"],
-        ["Intersection Turns", "Critical", "Truck turning into a lane where a two-wheeler is traveling parallel", "Two-Stage Turn Signal collision escalation"],
-        ["Night & Heavy Rain", "High", "Glare and darkness blinding conventional optical mirrors", "CLAHE adaptive contrast enhancement"],
-    ]
-    prob_table = Table(prob_data, colWidths=[110, 75, 175, 140])
-    prob_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), PRIMARY),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 8.5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-        ("TOPPADDING", (0, 0), (-1, -1), 5),
-        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COL),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
-    ]))
-    story.append(prob_table)
-    story.append(Spacer(1, 16))
-
-    # =========================================================================
-    # SECTION 2: WHAT WE HAVE BUILT (CURRENT PROTOTYPE)
-    # =========================================================================
-    story.append(PageBreak())
-    story.append(Paragraph("2. What We Have Built (Current Software Prototype)", h1_style))
-    p2 = (
-        "The current DRISHTI prototype is a fully functioning, on-device software ADAS application. "
-        "It runs locally on Windows without needing any cloud connection, specialized AI servers, or external hardware. "
-        "Here are the core components built into this prototype:"
-    )
-    story.append(Paragraph(p2, body_style))
-
-    features = [
-        ("High-Speed Object Tracking (YOLOv8n + ByteTrack)",
-         "Identifies and tracks Vehicles (Cars, Trucks, Buses), Pedestrians, and Two-Wheelers (Motorcycles, Bicycles) simultaneously with unique persistent track IDs."),
-
-        ("Dynamic Dual-Zone Image Geometry",
-         "Monitors both Left and Right blind zones concurrently with user-adjustable polygon boundaries, lateral width scaling (50% to 100%), and sensitivity sliders."),
-
-        ("Automotive Two-Stage Warning Logic (UN ECE R151 Standard)",
-         "<b>Stage 1 (Advisory - Amber):</b> Visual notification when a vehicle is in the blind spot but turn signals are OFF.<br/>"
-         "<b>Stage 2 (Critical Emergency - Flashing Red):</b> Triggers rapid double-beep sirens and high-contrast HUD warnings when the driver activates the turn signal toward an occupied blind zone."),
-
-        ("Vehicle Speed & Stationary Noise Suppression",
-         "Includes vehicle speed simulation (0–90 km/h). When the truck is stationary at a traffic light (< 5 km/h), noisy false audible alarms are automatically silenced."),
-
-        ("Motion Velocity Vectors & Direction of Approach",
-         "Calculates frame-by-frame velocity vectors (Δx, Δy) to distinguish vehicles closing in from behind ('APPROACHING') versus vehicles moving away ('RECEDING')."),
-
-        ("Night & Adverse Weather Vision Enhancement (CLAHE)",
-         "One-click adaptive histogram equalization and gamma correction to cut through headlight glare, heavy rain, and nighttime shadows."),
-
-        ("Black-Box Incident Snapshot Recording",
-         "Automatically captures high-resolution photo evidence of every blind-spot alert and saves it to a local snapshot vault with one-click review in the History tab."),
-
-        ("Full-Screen Driver Kiosk Mode (F11)",
-         "A simplified, distraction-free in-cabin HUD mode displaying only live video, mirror indicators, speed, and emergency alerts."),
-    ]
-
-    for title, desc in features:
-        story.append(Paragraph(f"• <b>{title}:</b> {desc}", bullet_style))
-        story.append(Spacer(1, 3))
-
-    story.append(Spacer(1, 12))
-
-    # Sample Prototype Screenshot / Visual Box
-    sample_img_path = ASSETS_DIR / "rendered_feed_sample.png"
-    if sample_img_path.exists():
-        story.append(Paragraph("<b>Figure 1: Live Dual-Zone Detection Feed with Real-Time Bounding Boxes and HUD</b>", h2_style))
-        story.append(Image(str(sample_img_path), width=5.5 * inch, height=3.4 * inch))
-        story.append(Spacer(1, 12))
-
-    # =========================================================================
-    # SECTION 3: SYSTEM ARCHITECTURE & TELEMETRY
-    # =========================================================================
-    story.append(PageBreak())
-    story.append(Paragraph("3. Technical Architecture & Verification", h1_style))
-    p3 = (
-        "The system employs a decoupled, multi-threaded producer-consumer architecture. "
-        "The computer vision inference pipeline runs on a dedicated worker thread, ensuring the user interface "
-        "and audio warning system remain buttery-smooth with zero frame drops."
-    )
-    story.append(Paragraph(p3, body_style))
-
-    arch_data = [
-        ["Layer", "Module", "Responsibility", "Key Performance Metric"],
-        ["Input", "OpenCV Video Engine", "Webcam indices 0–5 or recorded MP4/WebM video feed", "DirectShow low-latency capture"],
-        ["Vision AI", "Ultralytics YOLOv8n", "Deep learning road user feature extraction", "640px / 416px Fast inference"],
-        ["Tracking", "ByteTrack Algorithm", "Associates bounding boxes across frames", "IoU fallback, persistent IDs"],
-        ["Spatial Math", "cv2.pointPolygonTest", "Ray-casting point-in-polygon zone containment", "< 0.5 ms evaluation time"],
-        ["Decision", "Two-Stage State Machine", "Correlates Turn Indicators + Speed + Zones", "Instant Stage 1 / Stage 2 dispatch"],
-        ["Alert Audio", "Pygame Frequency Synth", "Multi-frequency advisory chimes & pulsed sirens", "Non-blocking audio thread"],
-        ["Data Vault", "SQLite 3 Database", "Logs every distinct safety event and snapshot path", "Indexed timeline, CSV export"],
-    ]
-    arch_table = Table(arch_data, colWidths=[65, 110, 205, 120])
-    arch_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), PRIMARY),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
-        ("TOPPADDING", (0, 0), (-1, -1), 4.5),
-        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COL),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
-    ]))
-    story.append(arch_table)
-    story.append(Spacer(1, 14))
-
-    # Full Product Reference Visual
-    banner_img_path = ASSETS_DIR / "ref_banner.png"
-    if banner_img_path.exists():
-        story.append(Paragraph("<b>Figure 2: DRISHTI Initiative Emblem — Dedicated to Safer Indian Highways</b>", h2_style))
-        story.append(Image(str(banner_img_path), width=4.5 * inch, height=1.6 * inch))
-        story.append(Spacer(1, 14))
-
-    # =========================================================================
-    # SECTION 4: THE NEXT STEP (PHASE 2 HARDWARE ROADMAP)
-    # =========================================================================
-    story.append(PageBreak())
-    story.append(Paragraph("4. The Next Step: Phase 2 Physical Hardware Integration", h1_style))
-    p4 = (
-        "Now that the complete software intelligence, ADAS logic, and alert state machine are validated, "
-        "the next phase transitions this prototype from a desktop demonstration to an <b>in-vehicle physical hardware installation</b>. "
-        "The following hardware modules are planned for the Phase 2 build:"
-    )
-    story.append(Paragraph(p4, body_style))
-
-    hw_steps = [
-        ("1. Physical Exterior Mirror Warning LEDs (Microcontroller Relay)",
-         "Mount high-intensity amber/red LED warning pods on or inside the truck's exterior side-mirror housings. "
-         "An onboard ESP32 or Arduino microcontroller connects via USB Serial or Wi-Fi to receive immediate "
-         "<code>ALERT_LEFT_ON</code> or <code>ALERT_RIGHT_CRITICAL</code> commands, illuminating the mirror warning light right in the driver's peripheral vision."),
-
-        ("2. Tactile Haptic Steering & Seat Vibration",
-         "Visual alerts can be missed during complex maneuvers. By connecting eccentric rotating mass (ERM) vibration motors "
-         "to the driver's seat cushion or steering wheel, the system delivers direct tactile feedback corresponding to the side of the impending hazard."),
-
-        ("3. Direct Vehicle CAN-Bus (J1939 / OBD-II) Integration",
-         "Replace simulated turn signals and sliders with physical vehicle data. Using an MCP2515 CAN-bus transceiver, "
-         "the system will directly read the truck's actual turn indicator stalk position, steering wheel angle, and transmission speedometer."),
-
-        ("4. Radar-Camera Sensor Fusion (77GHz mmWave Radar)",
-         "Combine the wide-angle camera with an automotive 77GHz millimeter-wave radar sensor mounted on the trailer side skirt. "
-         "Cameras provide rich object classification (distinguishing bikes from cars), while radar provides millimeter-accurate distance "
-         "and velocity even through blinding sandstorms, dense smog, or heavy spray."),
-
-        ("5. Automotive Ruggedized Edge AI Unit",
-         "Port the YOLOv8 and tracking pipeline onto an industrial, fanless, IP67 sealed edge AI module (such as an NVIDIA Jetson Orin Nano "
-         "or NXP S32G vehicle computer) powered directly from the truck's 12V / 24V DC battery system with wide temperature tolerance (-20°C to +70°C)."),
-    ]
-
-    for step_title, step_desc in hw_steps:
-        story.append(Paragraph(f"• <b>{step_title}:</b> {step_desc}", bullet_style))
-        story.append(Spacer(1, 5))
-
-    story.append(Spacer(1, 14))
-
-    # Hardware Implementation Comparison Table
-    hw_table_data = [
-        ["Subsystem", "Current Phase 1 (Software Prototype)", "Phase 2 (Physical Hardware Target)"],
-        ["Turn Signals", "Keyboard hotkeys (A/D) & onscreen buttons", "Direct truck CAN-bus indicator stalk sensor"],
-        ["Speed Telemetry", "Interactive slider (0–90 km/h) & presets", "Vehicle Speed Sensor (VSS) / GPS pulse reader"],
-        ["Visual Alert", "Onscreen HUD glowing red alert cards", "Amber/Red LED pods inside exterior side mirrors"],
-        ["Audible Alert", "Laptop/PC speaker synthesized frequencies", "Cabin buzzer + haptic seat vibration actuator"],
-        ["Sensors", "USB / built-in webcam or road video", "Automotive IP69K HDR camera + 77GHz mmWave radar"],
-        ["Compute Unit", "Local Python / Windows PC", "Automotive fanless edge computer (Jetson / NXP)"],
-    ]
-    hw_table = Table(hw_table_data, colWidths=[100, 195, 205])
-    hw_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), PRIMARY),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4.5),
-        ("TOPPADDING", (0, 0), (-1, -1), 4.5),
-        ("GRID", (0, 0), (-1, -1), 0.5, BORDER_COL),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
-    ]))
-    story.append(hw_table)
-    story.append(Spacer(1, 16))
-
-    # =========================================================================
-    # SECTION 5: CONCLUSION & ACTION PLAN
-    # =========================================================================
-    story.append(Paragraph("5. Summary & Immediate Next Steps", h1_style))
-    concl = (
-        "<b>Conclusion:</b> The Phase 1 prototype successfully demonstrates that intelligent, vision-based blind-spot monitoring "
-        "can be deployed efficiently with zero lag and high reliability. The software ADAS logic cleanly handles two-stage alert "
-        "escalation, motion vectors, and stationary filtering.<br/><br/>"
-        "<b>Recommended Immediate Actions:</b><br/>"
-        "1. Present and validate the current software prototype using the bundled looping road demo.<br/>"
-        "2. Review the incident snapshot log to evaluate real-world bounding box accuracy across various road user types.<br/>"
-        "3. Procure the Phase 2 hardware bill of materials: ESP32 development board, dual 12V high-brightness amber LED pods, "
-        "and an MCP2515 CAN-bus interface module for vehicle test-bench integration."
-    )
-    story.append(Paragraph(concl, body_style))
-
-    # Build the document
-    doc.build(story, canvasmaker=NumberedCanvas)
-    return str(output_path)
-
+    story += [P("04  /  GETTING STARTED", "Kicker"), P("Run the desktop demo", "H1x"), P("The public landing page is a guide and download entry point. To run the actual detector, download or clone the repository on Windows, extract it, and start the bundled launcher. The first model download requires internet access if the YOLO weights are not already present.")]
+    steps = ["Download and extract the project ZIP from the GitHub repository.", "On Windows, double-click <b>run.bat</b>, or use <b>run.bat --demo</b> to start the bundled road clip.", "Choose a camera or upload an MP4, AVI, MOV, or WebM recording.", "Choose a zone preset, adjust the confidence and audio settings, then start detection.", "Use History or Analytics to review events; export a CSV when needed."]
+    for i, s in enumerate(steps, 1):
+        story.append(P(f"<font color='#F3A20B'><b>{i:02d}</b></font>  {s}"))
+    story += [Spacer(1, 2*mm), P("Project links", "H2x")]
+    links = Table([[P(f'<link href="{LANDING}"><u>DRISHTI Landing Page</u></link>', "Link"), P(f'<link href="{REPO}"><u>GitHub Repository</u></link>', "Link")]], colWidths=[88.5*mm,88.5*mm])
+    links.setStyle(TableStyle([("BACKGROUND",(0,0),(-1,-1),CREAM),("BOX",(0,0),(-1,-1),.7,colors.HexColor("#E7DCC8")),("LEFTPADDING",(0,0),(-1,-1),10),("RIGHTPADDING",(0,0),(-1,-1),10),("TOPPADDING",(0,0),(-1,-1),10),("BOTTOMPADDING",(0,0),(-1,-1),10)]))
+    story += [links, P("Demo video and reuse", "H2x"), P(f'The bundled clip is a 480p transcode of <link href="{VIDEO_SOURCE}"><u>Garbsen 2019.webm</u></link>, created by C.Suthorn and shared under <link href="{LICENSE}"><u>CC BY-SA 4.0</u></link>. Full credit is provided in the repository at assets/ATTRIBUTION.md. This source clip documents a road-safety pilot; it is not a DRISHTI test result and the project is not endorsed by the creator.'), P("Project boundaries", "H2x"), P("DRISHTI is an educational research and demonstration prototype. It is software-only, not an in-vehicle product. Its image overlays are not physically calibrated and must not be used to make driving or safety decisions."), Spacer(1, 2*mm), HRFlowable(width="100%", thickness=.8, color=ORANGE), Spacer(1, 2*mm), P("Safer Roads, Stronger India  ·  Prepared for project presentation by Rudra Rahul Rajgure", "Smallx")]
+    doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
+    print(OUT)
 
 if __name__ == "__main__":
-    generated_file = build_pdf_report()
-    print(f"Successfully generated PDF report at: {generated_file}")
+    build()

@@ -20,7 +20,6 @@ This is an educational demo and algorithm prototype, not a certified vehicle saf
 - **Full Historical Telemetry**: SQLite-backed history table with event filters and one-click CSV export.
 - **Customizable Video & Camera Input**: Support for local webcams 0–5, video files (MP4, AVI, MOV, WebM), and one-click looping DRISHTI road demo.
 - **CPU performance path**: Uses a reduced Fast inference size, warmed-up/fused YOLO layers where supported, limited OpenCV threading, a short camera buffer, and stale-frame dropping for recorded video. Skipped video frames are surfaced in the live performance badge; faster processing can miss brief events.
-- **Optimized local inference**: Uses fused YOLO layers where supported, a warmed-up model at the selected resolution, limited OpenCV threading, a short camera buffer, and stale-frame dropping for recorded video to reduce lag.
 - **Event-specific voice warning**: On a new zone entry, the app can speak the detected class and the left/right image-space side. Windows speech support uses `pyttsx3`; the visual alert and warning tone remain available if speech is unavailable. Mute controls both audio outputs.
 - **Transparent performance display**: The video badge separates model inference FPS from displayed UI FPS and reports the number of recorded-video frames skipped to catch up.
 - **Reproducible model evaluation tool**: `evaluate_model.py` runs Ultralytics validation against a labeled dataset YAML and saves precision, recall, mAP50, and mAP50-95 to JSON, plus the standard plots.
@@ -38,6 +37,8 @@ This launches the local Python runtime under `.python` with CPU PyTorch and YOLO
 ## Landing page
 
 Open `landing/index.html` in a browser or double-click `run_landing.bat`. The responsive static page follows the supplied cream, navy, serif-led visual reference and uses the bundled demo clip. Its “Download project ZIP” link downloads the complete source archive from GitHub, and the setup steps explain how to install and run the desktop app on Windows. The generated `support.js` and vendor React runtime from the design export were not copied; the page uses small project-owned HTML, CSS, and JavaScript files instead.
+
+Project overview and stages: [download the PDF](output/pdf/DRISHTI_Project_Overview.pdf). Prepared by **Rudra Rahul Rajgure**. The report describes the current software-only prototype and its second stage: validation and refinement using representative, labeled, held-out footage. The landing page also links to the report.
 
 ### Online landing page
 
@@ -57,7 +58,7 @@ The model weights are `yolov8n.pt` beside `main.py`. If they are missing, the fi
 
 ### Measuring detection quality
 
-The bundled NASA street timelapse is useful for showing the interface, but its night lighting and motion blur make it unsuitable for an accuracy score. The included COCO128 configuration downloads its labeled 128-image sample on first use. COCO128 comes from COCO train2017, so it is **not a held-out test set** and its score is not a trustworthy estimate of generalization. For a proper measured result, use a representative, separately held-out, labeled validation split in Ultralytics format with the standard 80 COCO class IDs/names (including person 0, bicycle 1, car 2, motorcycle 3, bus 5, and truck 7), then run:
+The bundled road clip shows real traffic at a truck-safety pilot in Garbsen, Germany. It is included for demonstrating playback and warning overlays, not as an accuracy test. The included COCO128 configuration downloads its labeled 128-image sample on first use. COCO128 comes from COCO train2017, so it is **not a held-out test set** and its score is not a trustworthy estimate of generalization. For a proper measured result, use a representative, separately held-out, labeled validation split in Ultralytics format with the standard 80 COCO class IDs/names (including person 0, bicycle 1, car 2, motorcycle 3, bus 5, and truck 7), then run:
 
 ```powershell
 .\.venv\Scripts\python.exe evaluate_model.py path\to\dataset.yaml --profile Balanced --device cpu --output evaluation_report.json
@@ -67,7 +68,7 @@ The smoke baseline can be reproduced with `python evaluate_model.py evaluation_c
 
 ## Demo video credit
 
-The bundled `assets/demo_road.webm` is **Street Timelapse**, credited to Megan Willy (NASA/Goddard Space Flight Center), from [NASA Scientific Visualization Studio item 10397](https://svs.gsfc.nasa.gov/10397). See [assets/ATTRIBUTION.md](assets/ATTRIBUTION.md). The clip is a timelapse and is included only to demonstrate the video and detection workflow.
+The bundled `assets/demo_road.webm` is a 480p transcode of [Garbsen 2019.webm](https://commons.wikimedia.org/wiki/File:Garbsen_2019.webm), by [C.Suthorn](https://commons.wikimedia.org/wiki/User:C.Suthorn), under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). It shows real road traffic recorded alongside a truck-safety pilot. See [assets/ATTRIBUTION.md](assets/ATTRIBUTION.md) for full credit and scope. The project's zones remain adjustable image-space examples, not calibrated physical blind spots.
 
 ## Controls
 
@@ -89,7 +90,7 @@ audio_alert.py          Computer-speaker alert tone
 evaluate_model.py       Labeled-dataset YOLO validation and JSON report
 evaluation_coco128.yaml COCO128 validation configuration (smoke baseline)
 evaluation_report.json  Reproducible run summary and stated limitations
-assets/demo_road.webm   Bundled road-video demo
+assets/demo_road.webm   Real road and truck-safety demonstration footage
 run.bat                 Windows launch shortcut
 ```
 
