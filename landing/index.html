@@ -23,7 +23,7 @@
     <nav id="main-nav" class="main-nav" aria-label="Main navigation">
       <a href="#challenge">The Challenge</a><a href="#system">The System</a><a href="#logic">Warning Logic</a><a href="#roadmap">Next Steps</a>
     </nav>
-    <a class="button button-outline header-cta" href="#demo">View the Demo</a>
+    <a class="button button-outline header-cta" href="https://github.com/spidyxrud-dot/drishti-blind-spot-warning-system/archive/refs/heads/main.zip">Download the app</a>
   </header>
 
   <main>
@@ -34,7 +34,7 @@
         <p class="hero-intro reveal delay-2">A local desktop prototype that detects road users in video and highlights configurable warning regions for a clear, hands-on safety demonstration.</p>
         <div class="hero-actions reveal delay-3">
           <a class="button button-primary" href="#demo">Watch the road demo <span aria-hidden="true">↗</span></a>
-          <a class="button button-quiet" href="#system">Explore the system</a>
+          <a class="button button-quiet" href="https://github.com/spidyxrud-dot/drishti-blind-spot-warning-system/archive/refs/heads/main.zip">Download the desktop app ↓</a>
         </div>
         <div class="hero-facts reveal delay-3"><span>Runs on your computer</span><span>Camera or recorded video</span><span>No external hardware</span></div>
       </div>
@@ -114,12 +114,27 @@
     <section class="closing wrap">
       <p class="eyebrow">DRISHTI · PROTOTYPE</p>
       <h2>Safer roads,<br><em>stronger India.</em></h2>
-      <p class="muted">Try the bundled desktop demonstration, then review its event history and evaluation report.</p>
+      <p class="muted">Download the Windows project ZIP, extract it, then follow the short setup below. The desktop app runs on your computer; the landing page itself is only a website.</p>
+      <div class="download-actions">
+        <a class="button button-primary" href="https://github.com/spidyxrud-dot/drishti-blind-spot-warning-system/archive/refs/heads/main.zip">Download project ZIP <span aria-hidden="true">↓</span></a>
+        <a class="button button-quiet" href="https://github.com/spidyxrud-dot/drishti-blind-spot-warning-system/blob/main/README.md">Read setup guide</a>
+      </div>
+      <div class="setup-guide">
+        <p><strong>Run it on Windows</strong> · Python 3.10–3.12 required</p>
+        <ol>
+          <li>Extract the ZIP and open the extracted project folder.</li>
+          <li>Open PowerShell in that folder and create the environment:</li>
+        </ol>
+        <pre><code>py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe main.py --demo</code></pre>
+        <p>YOLOv8n weights download on first launch, so internet is needed for setup. Use a webcam or the bundled demo video. This is an educational prototype, not a certified driving-safety system.</p>
+      </div>
       <div class="run-command"><code>run.bat --demo</code><button id="copy-command" class="button button-primary" type="button">Copy run command</button></div>
       <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
     </section>
   </main>
 
-  <footer class="site-footer"><div class="wrap footer-inner"><a class="brand footer-brand" href="#top"><span>DRISHTI<small>SAFER ROADS · STRONGER INDIA</small></span></a><p>Educational software prototype · Not a certified vehicle-safety system</p><a href="../README.md">Project documentation</a></div><div class="wrap attribution">Demo footage credit: NASA Scientific Visualization Studio. The UI uses DRISHTI branding; the bundled video is not ISRO footage.</div></footer>
+  <footer class="site-footer"><div class="wrap footer-inner"><a class="brand footer-brand" href="#top"><span>DRISHTI<small>SAFER ROADS · STRONGER INDIA</small></span></a><p>Educational software prototype · Not a certified vehicle-safety system</p><a href="https://github.com/spidyxrud-dot/drishti-blind-spot-warning-system">Project repository</a></div><div class="wrap attribution">Demo footage credit: NASA Scientific Visualization Studio. The UI uses DRISHTI branding; the bundled video is not ISRO footage.</div></footer>
 </body>
 </html>

@@ -37,7 +37,11 @@ This launches the local Python runtime under `.python` with CPU PyTorch and YOLO
 
 ## Landing page
 
-Open `landing/index.html` in a browser or double-click `run_landing.bat`. The responsive static page follows the supplied cream, navy, serif-led visual reference and uses the bundled demo clip. Its “Copy run command” button copies `run.bat --demo`. The generated `support.js` and vendor React runtime from the design export were not copied; the page uses small project-owned HTML, CSS, and JavaScript files instead.
+Open `landing/index.html` in a browser or double-click `run_landing.bat`. The responsive static page follows the supplied cream, navy, serif-led visual reference and uses the bundled demo clip. Its “Download project ZIP” link downloads the complete source archive from GitHub, and the setup steps explain how to install and run the desktop app on Windows. The generated `support.js` and vendor React runtime from the design export were not copied; the page uses small project-owned HTML, CSS, and JavaScript files instead.
+
+### Online landing page
+
+The landing page is published with GitHub Pages from the `main` branch by `.github/workflows/deploy-pages.yml`. The site URL is `https://spidyxrud-dot.github.io/drishti-blind-spot-warning-system/`; the root page forwards visitors to `/landing/`. To deploy, enable **Settings → Pages → Build and deployment → Source → GitHub Actions** once. After that, each push to `main` updates the site automatically. Visitors can download the Windows application source as a ZIP and run it locally; GitHub Pages hosts the website and does not run the Python desktop app in a browser.
 
 ### Fresh setup and recovery
 
