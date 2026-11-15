@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F7F2E8">
+  <meta name="description" content="DRISHTI is a local computer-vision demonstration for configurable heavy-vehicle warning zones.">
+  <title>DRISHTI · Safer Roads, Stronger India</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="landing.css">
+  <script src="landing.js" defer></script>
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+  <header class="site-header wrap">
+    <a class="brand" href="#top" aria-label="DRISHTI home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18"/><path d="M3 20c5-7 11-10 17-10s12 3 17 10c-5 7-11 10-17 10S8 27 3 20Z"/><circle class="brand-eye" cx="20" cy="20" r="5"/></svg>
+      <span>DRISHTI<small>INTELLIGENT ROAD USER MONITOR</small></span>
+    </a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav">Menu</button>
+    <nav id="main-nav" class="main-nav" aria-label="Main navigation">
+      <a href="#challenge">The Challenge</a><a href="#system">The System</a><a href="#logic">Warning Logic</a><a href="#roadmap">Next Steps</a>
+    </nav>
+    <a class="button button-outline header-cta" href="#demo">View the Demo</a>
+  </header>
+
+  <main>
+    <section id="top" class="hero wrap">
+      <div class="hero-copy">
+        <p class="eyebrow reveal">COMPUTER VISION · HEAVY VEHICLE DEMONSTRATION</p>
+        <h1 class="reveal delay-1">Drive safe.<br><em>Stay aware.</em></h1>
+        <p class="hero-intro reveal delay-2">A local desktop prototype that detects road users in video and highlights configurable warning regions for a clear, hands-on safety demonstration.</p>
+        <div class="hero-actions reveal delay-3">
+          <a class="button button-primary" href="#demo">Watch the road demo <span aria-hidden="true">↗</span></a>
+          <a class="button button-quiet" href="#system">Explore the system</a>
+        </div>
+        <div class="hero-facts reveal delay-3"><span>Runs on your computer</span><span>Camera or recorded video</span><span>No external hardware</span></div>
+      </div>
+      <div class="monitor-shell reveal delay-2">
+        <div class="monitor-top"><span><i class="live-dot"></i> LOCAL VIDEO PREVIEW</span><span>DRISHTI · DEMO MODE</span></div>
+        <div class="video-stage" id="demo">
+          <video class="road-video" autoplay muted loop playsinline preload="metadata">
+            <source src="../assets/demo_road.webm" type="video/webm">
+            Your browser cannot play this video. Use the Windows desktop application to run the demo.
+          </video>
+          <svg class="zone-overlay" viewBox="0 0 560 360" preserveAspectRatio="none" aria-hidden="true">
+            <polygon points="24,82 187,65 219,348 24,348" class="left-zone"/>
+            <polygon points="355,66 536,84 536,348 320,348" class="right-zone"/>
+            <text x="38" y="104">LEFT EXAMPLE ZONE</text><text x="365" y="105">RIGHT EXAMPLE ZONE</text>
+            <path class="scan-line" d="M0 0H560"/>
+          </svg>
+          <div class="monitor-alert"><span class="alert-mark">!</span><span><b>IMAGE-SPACE ZONES</b><small>Adjustable examples · not physically calibrated</small></span></div>
+        </div>
+        <div class="monitor-foot"><span>Bundled road footage</span><span>Video preview only · no live vehicle connection</span></div>
+      </div>
+    </section>
+
+    <section class="stats-band" aria-label="Project overview">
+      <div class="wrap stats-grid">
+        <div><strong>6</strong><span>road-user classes</span></div><div><strong>2</strong><span>editable example zones</span></div>
+        <div><strong>0</strong><span>external hardware required</span></div><div><strong>Local</strong><span>video and inference workflow</span></div>
+      </div>
+    </section>
+
+    <section id="challenge" class="content-section wrap">
+      <p class="eyebrow">THE CHALLENGE</p>
+      <h2 class="section-title reveal">A high driving position can hide what is close beside a heavy vehicle.</h2>
+      <p class="section-lead reveal">DRISHTI demonstrates how computer vision can make road users visible in a video feed and bring attention to selected regions around the vehicle.</p>
+      <div class="challenge-list">
+        <article class="challenge-row reveal"><span>01</span><b>Limited visibility</b><p class="muted">People on foot, bicycles, motorcycles and nearby vehicles can be difficult to see in mirrors.</p><span class="tag">ROAD USERS</span></article>
+        <article class="challenge-row reveal"><span>02</span><b>Changing situations</b><p class="muted">A moving image and adjustable zones help demonstrate how warning logic responds to different scenes.</p><span class="tag">VIDEO ANALYSIS</span></article>
+        <article class="challenge-row reveal"><span>03</span><b>Clear feedback</b><p class="muted">Visual states, a computer-speaker tone and optional spoken callouts make demo events easy to notice.</p><span class="tag">AUDIO · VISUAL</span></article>
+      </div>
+    </section>
+
+    <section id="system" class="system-band">
+      <div class="wrap content-section">
+        <p class="eyebrow">THE DESKTOP PROTOTYPE</p>
+        <h2 class="section-title reveal">A practical demonstration, built to run on an ordinary PC.</h2>
+        <div class="feature-grid">
+          <article class="feature-card reveal"><span class="feature-number">01</span><h3>Road-user detection</h3><p>YOLOv8n identifies people, bicycles, motorcycles, cars, buses and trucks in a live or recorded feed.</p></article>
+          <article class="feature-card reveal"><span class="feature-number">02</span><h3>Persistent tracking</h3><p>ByteTrack associates detections across processed frames to distinguish new entries from continued presence.</p></article>
+          <article class="feature-card reveal"><span class="feature-number">03</span><h3>Editable zones</h3><p>Adjust left and right polygons and observe when an object’s image-space centre enters a selected region.</p></article>
+          <article class="feature-card reveal"><span class="feature-number">04</span><h3>Two-stage display</h3><p>Advisory and critical colors demonstrate how simulated turn indicators can affect warning priority.</p></article>
+          <article class="feature-card reveal"><span class="feature-number">05</span><h3>Event review</h3><p>SQLite history, incident snapshots, analytics and CSV export support review after a demo session.</p></article>
+          <article class="feature-card reveal"><span class="feature-number">06</span><h3>Local processing</h3><p>Video and inference run locally. A computer-speaker alert and optional speech need no added hardware.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="logic" class="content-section wrap">
+      <p class="eyebrow">WARNING LOGIC</p>
+      <h2 class="section-title reveal">Two visual states. One clear example.</h2>
+      <div class="logic-grid">
+        <article class="logic-card advisory reveal"><span class="eyebrow">STAGE 1 · ADVISORY</span><h3>Road user in a zone</h3><p>A road user enters an enabled image-space region. The dashboard marks the object and records the entry.</p></article>
+        <article class="logic-card critical reveal"><span class="eyebrow">STAGE 2 · SIMULATED PRIORITY</span><h3>Indicator matches the zone</h3><p>In the desktop simulation, a matching turn-indicator input raises the visual warning priority and can play the critical tone.</p></article>
+      </div>
+      <p class="fine-print reveal">The speed and indicator inputs are demonstrations, not readings from a vehicle. These behaviors are not calibrated or certified for road use.</p>
+    </section>
+
+    <section id="roadmap" class="roadmap-band">
+      <div class="wrap content-section">
+        <p class="eyebrow">NEXT STEPS</p><h2 class="section-title reveal">From a desktop prototype to measured, responsible research.</h2>
+        <div class="roadmap-grid">
+          <article class="roadmap-card reveal"><span>01</span><h3>Test with held-out footage</h3><p>Measure precision, recall and missed events on representative, labeled road scenes.</p></article>
+          <article class="roadmap-card reveal"><span>02</span><h3>Calibrate zones carefully</h3><p>Use known camera positions and vehicle geometry before making real-world safety claims.</p></article>
+          <article class="roadmap-card reveal"><span>03</span><h3>Validate with experts</h3><p>Review usability, alert timing and safety behavior with qualified vehicle-safety specialists.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing wrap">
+      <p class="eyebrow">DRISHTI · PROTOTYPE</p>
+      <h2>Safer roads,<br><em>stronger India.</em></h2>
+      <p class="muted">Try the bundled desktop demonstration, then review its event history and evaluation report.</p>
+      <div class="run-command"><code>run.bat --demo</code><button id="copy-command" class="button button-primary" type="button">Copy run command</button></div>
+      <p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="wrap footer-inner"><a class="brand footer-brand" href="#top"><span>DRISHTI<small>SAFER ROADS · STRONGER INDIA</small></span></a><p>Educational software prototype · Not a certified vehicle-safety system</p><a href="../README.md">Project documentation</a></div><div class="wrap attribution">Demo footage credit: NASA Scientific Visualization Studio. The UI uses DRISHTI branding; the bundled video is not ISRO footage.</div></footer>
+</body>
+</html>

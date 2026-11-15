@@ -1,0 +1,30 @@
+# Local Python runtimes and package/model caches
+.python/
+.ultralytics/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.pt
+
+# User-generated monitoring data and incident snapshots
+data/*.db
+data/snapshots/*
+!data/snapshots/.gitkeep
+
+# Downloaded validation dataset and inference/evaluation output
+datasets/coco128/
+datasets/coco128.zip
+runs/
+evaluation_report.json
+
+# Generated report and local/camera preview imagery
+DRISHTI_Blind_Spot_System_Report.pdf
+assets/rendered_feed_sample.png
+assets/ref_*.png
+
+# Local environment files
+.env
+.env.*
+!.env.example
+*.log
